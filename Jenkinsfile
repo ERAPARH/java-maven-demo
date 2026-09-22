@@ -19,18 +19,28 @@ pipeline {
 
         stage('Build & Test') {
             steps {
+                echo 'Running Maven build and tests...'
                 sh 'mvn clean test'
             }
         }
 
         stage('Package') {
             steps {
+                echo 'Creating executable JAR...'
                 sh 'mvn package'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                echo 'Building Docker image...'
+                sh 'docker build -t java-maven-demo:1.0 .'
             }
         }
 
         stage('Archive Artifact') {
             steps {
+                echo 'Archiving JAR artifact...'
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
@@ -38,7 +48,16 @@ pipeline {
 
     post {
         always {
+            echo 'Publishing JUnit test results...'
             junit 'target/surefire-reports/*.xml'
+        }
+
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the console logs.'
         }
     }
 }
