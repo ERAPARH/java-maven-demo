@@ -1,4 +1,4 @@
-pipeline {
+ppipeline {
 
     agent {
         label 'linux-python'
@@ -34,21 +34,54 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker image...'
-                sh 'docker build -t java-maven-demo:1.0 .'
+
+                sh '''
+                    docker build \
+                        -t eraparh/java-maven-demo:1.0 .
+                '''
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | \
+                        docker login \
+                        -u "$DOCKER_USERNAME" \
+                        --password-stdin
+
+                        docker push eraparh/java-maven-demo:1.0
+
+                        docker logout
+                    '''
+                }
             }
         }
 
         stage('Archive Artifact') {
             steps {
                 echo 'Archiving JAR artifact...'
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+
+                archiveArtifacts artifacts: 'target/*.jar',
+                                 fingerprint: true
             }
         }
     }
 
     post {
+
         always {
             echo 'Publishing JUnit test results...'
+
             junit 'target/surefire-reports/*.xml'
         }
 
