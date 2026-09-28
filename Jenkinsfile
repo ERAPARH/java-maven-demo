@@ -1,4 +1,4 @@
-ppipeline {
+pipeline {
 
     agent {
         label 'linux-python'
